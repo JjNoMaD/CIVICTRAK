@@ -1,11 +1,15 @@
+// main.dart
+
 import 'package:flutter/material.dart';
 import 'core/session.dart';
-import 'features/auth/ui/login_page.dart';
-import 'features/complaints/ui/submit_complaint_page.dart';
-import 'features/complaints/ui/complaint_list_page.dart';
-import 'features/complaints/ui/complaint_detail_page.dart';
-import 'features/admin/ui/admin_dashboard_page.dart';
 
+// --- ADD THESE DATA MODEL IMPORTS (Primary Sources) ---
+
+import 'features/auth/ui/login_page.dart';
+import 'features/complaints/ui/submit_complaint_page.dart';// 👈 HIDE from here
+import 'features/complaints/ui/complaint_list_page.dart' hide ComplaintStatus;
+ // 👈 HIDE from here
+import 'features/admin/ui/admin_dashboard_page.dart' hide ComplaintStatus;
 void main() => runApp(const CivicTrackApp());
 
 class CivicTrackApp extends StatelessWidget {
@@ -33,7 +37,8 @@ class CivicTrackApp extends StatelessWidget {
         lockAnonymous: true,
       ),
   '/list': (_) => const ComplaintListPage(),
-  '/detail': (_) => const ComplaintDetailPage(id: 'TEMP_ID'),
+ 
+
 },
 
 );
