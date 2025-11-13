@@ -2,8 +2,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'complaint_list_page.dart'; // contains _ComplaintItem and ComplaintStatus enums
-
+import '../data/complaint_model.dart';
 
 class ComplaintDetailPage extends StatefulWidget {
   final ComplaintItem item;
@@ -71,19 +70,26 @@ class _ComplaintDetailPageState extends State<ComplaintDetailPage> {
     Navigator.pop(context, updated);
   }
 
+  String _labelForStatus(ComplaintStatus s) {
+    switch (s) {
+      case ComplaintStatus.assigned:
+        return 'Assigned';
+      case ComplaintStatus.inProgress:
+        return 'In Progress';
+      case ComplaintStatus.resolved:
+        return 'Resolved';
+      case ComplaintStatus.escalated:
+        return 'Escalated';
+    }
+  }
+
   Widget _statusDropdown() {
     return DropdownButtonFormField<ComplaintStatus>(
       value: _item.status,
       items: ComplaintStatus.values
           .map((s) => DropdownMenuItem(
                 value: s,
-                child: Text(
-                  s == ComplaintStatus.assigned
-                      ? 'Assigned'
-                      : s == ComplaintStatus.inProgress
-                          ? 'In Progress'
-                          : 'Resolved',
-                ),
+                child: Text(_labelForStatus(s)),
               ))
           .toList(),
       onChanged: (v) {
@@ -130,7 +136,10 @@ class _ComplaintDetailPageState extends State<ComplaintDetailPage> {
               children: [
                 const Text('Proof image', style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
-                ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.file(_proofFile!, height: 180, fit: BoxFit.cover)),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.file(_proofFile!, height: 180, fit: BoxFit.cover),
+                ),
                 const SizedBox(height: 12),
               ],
             ),
@@ -163,7 +172,12 @@ class _ComplaintDetailPageState extends State<ComplaintDetailPage> {
             ),
             const SizedBox(width: 12),
             if (!_canUploadProof)
-              const Flexible(child: Text('Attach proof only when status is In Progress or Resolved', style: TextStyle(color: Colors.black54))),
+              const Flexible(
+                child: Text(
+                  'Attach proof only when status is In Progress or Resolved',
+                  style: TextStyle(color: Colors.black54),
+                ),
+              ),
           ]),
 
           const SizedBox(height: 24),
@@ -174,8 +188,15 @@ class _ComplaintDetailPageState extends State<ComplaintDetailPage> {
             child: FilledButton(
               onPressed: _saving ? null : _saveAndReturn,
               child: _saving
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Text('Save updates')),
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Text('Save updates'),
+                    ),
             ),
           ),
         ]),

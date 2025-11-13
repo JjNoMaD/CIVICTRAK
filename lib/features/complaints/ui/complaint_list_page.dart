@@ -1,6 +1,7 @@
 // lib/features/complaints/ui/complaint_list_page.dart
 import 'package:flutter/material.dart';
 import 'complaint_detail_page.dart';
+import '../data/complaint_model.dart';
 import 'dart:math';
 
 class ComplaintListPage extends StatefulWidget {
@@ -10,62 +11,29 @@ class ComplaintListPage extends StatefulWidget {
   State<ComplaintListPage> createState() => _ComplaintListPageState();
 }
 
-enum ComplaintStatus { assigned, inProgress, resolved }
-
-class ComplaintItem {
-  final String id;
-  final String title;
-  final String description;
-  final String category;
-  final String address;
-  ComplaintStatus status;
-  final DateTime reportedAt;
-  String? proofImagePath;
-
-  ComplaintItem({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.category,
-    required this.address,
-    required this.status,
-    required this.reportedAt,
-    this.proofImagePath,
-  });
-
-  ComplaintItem copyWith({
-    ComplaintStatus? status,
-    String? proofImagePath,
-  }) =>
-      ComplaintItem(
-        id: id,
-        title: title,
-        description: description,
-        category: category,
-        address: address,
-        status: status ?? this.status,
-        reportedAt: reportedAt,
-        proofImagePath: proofImagePath ?? this.proofImagePath,
-      );
-}
-
 class _ComplaintListPageState extends State<ComplaintListPage> {
   bool _loading = false;
 
   // dummy assigned complaints
-  List<ComplaintItem> _complaints = List.generate(3, (i) {
-    final id = 'W${Random().nextInt(999999).toString().padLeft(6, '0')}';
-    final now = DateTime.now().subtract(Duration(days: i));
-    return ComplaintItem(
-      id: id,
-      title: ['Pothole near MG Road', 'Streetlight not working', 'Overflowing drain'][i],
-      description: ['Large pothole', 'Light bulb fused', 'Sewage overflow'][i],
-      category: ['Road', 'Lighting', 'Drainage'][i],
-      address: ['MG Road', '3rd Block', 'Pine & 7th'][i],
-      status: i == 1 ? ComplaintStatus.inProgress : ComplaintStatus.assigned,
-      reportedAt: now,
-    );
-  });
+  late List<ComplaintItem> _complaints;
+
+  @override
+  void initState() {
+    super.initState();
+    _complaints = List.generate(3, (i) {
+      final id = 'W${Random().nextInt(999999).toString().padLeft(6, '0')}';
+      final now = DateTime.now().subtract(Duration(days: i));
+      return ComplaintItem(
+        id: id,
+        title: ['Pothole near MG Road', 'Streetlight not working', 'Overflowing drain'][i],
+        description: ['Large pothole', 'Light bulb fused', 'Sewage overflow'][i],
+        category: ['Road', 'Lighting', 'Drainage'][i],
+        address: ['MG Road', '3rd Block', 'Pine & 7th'][i],
+        status: i == 1 ? ComplaintStatus.inProgress : ComplaintStatus.assigned,
+        reportedAt: now,
+      );
+    });
+  }
 
   Future<void> _refresh() async {
     setState(() => _loading = true);
@@ -97,6 +65,8 @@ class _ComplaintListPageState extends State<ComplaintListPage> {
         return Colors.blue;
       case ComplaintStatus.resolved:
         return Colors.green;
+      case ComplaintStatus.escalated:
+        return Colors.red;
     }
   }
 
@@ -108,6 +78,8 @@ class _ComplaintListPageState extends State<ComplaintListPage> {
         return 'In Progress';
       case ComplaintStatus.resolved:
         return 'Resolved';
+      case ComplaintStatus.escalated:
+        return 'Escalated';
     }
   }
 

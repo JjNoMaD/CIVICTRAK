@@ -3,13 +3,14 @@
 import 'package:flutter/material.dart';
 import 'core/session.dart';
 
-// --- ADD THESE DATA MODEL IMPORTS (Primary Sources) ---
-
+// --- Page Imports ---
 import 'features/auth/ui/login_page.dart';
-import 'features/complaints/ui/submit_complaint_page.dart';// 👈 HIDE from here
-import 'features/complaints/ui/complaint_list_page.dart' hide ComplaintStatus;
- // 👈 HIDE from here
-import 'features/admin/ui/admin_dashboard_page.dart' hide ComplaintStatus;
+import 'features/complaints/ui/submit_complaint_page.dart';
+import 'features/complaints/ui/complaint_list_page.dart';
+import 'features/complaints/ui/citizen_complaint_list_page.dart';
+import 'features/complaints/ui/citizen_complaint_detail_page.dart';
+import 'features/admin/ui/admin_dashboard_page.dart';
+
 void main() => runApp(const CivicTrackApp());
 
 class CivicTrackApp extends StatelessWidget {
@@ -17,137 +18,235 @@ class CivicTrackApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-   return MaterialApp(
-  debugShowCheckedModeBanner: false,
-  title: 'civicTrack',
-  theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.deepPurple),
-
-  // 👇 start here; SplashGate will push to the right home
-  home: const _SplashGate(),
-
-  routes: {
-  '/login': (_) => const LoginPage(),
-  '/home/citizen': (_) => const CitizenHomePage(),
-  '/home/staff': (_) => const StaffHomePage(),
-  '/home/admin': (_) => const AdminDashboardPage(),
-  '/submit': (_) => const SubmitComplaintPage(),
-  // NEW: anonymous shortcut
-  '/submit/anonymous': (_) => const SubmitComplaintPage(
-        anonymousDefault: true,
-        lockAnonymous: true,
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'civicTrack',
+      theme: ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: Colors.deepPurple,
       ),
-  '/list': (_) => const ComplaintListPage(),
- 
-
-},
-
-);
-
-
-
-  }
-}
-
-/// Decides where to go based on saved role
-class _SplashGate extends StatelessWidget {
-  const _SplashGate({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<UserRole?>(
-      future: Session.getRole(),
-      builder: (context, snapshot) {
-        // 1) Show spinner only while the future is still running
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        // 2) Future is done. Read role (can be null on first launch)
-        final role = snapshot.data;
-
-        // 3) Route based on role; null -> Login
-        if (role == UserRole.staff) {
-          return const StaffHomePage();
-        } else if (role == UserRole.admin) {
-          return const AdminDashboardPage();
-        } else if (role == UserRole.citizen) {
-          return const CitizenHomePage();
-        } else {
-          // No role saved yet → go to Login
-          return const LoginPage();
-        }
+      
+      // 👇 start here; SplashGate will push to the right home
+      home: const _SplashGate(),
+      
+      routes: {
+        '/login': (_) => const LoginPage(),
+        '/home/citizen': (_) => const CitizenHomePage(),
+        '/home/staff': (_) => const StaffHomePage(),
+        '/home/admin': (_) => const AdminDashboardPage(),
+        '/submit': (_) => const SubmitComplaintPage(),
+        '/citizen/list': (_) => const CitizenComplaintListPage(),
+        '/staff/assigned': (_) => const ComplaintListPage(),
+        '/submit/anonymous': (_) => const SubmitComplaintPage(
+          anonymousDefault: true,
+          lockAnonymous: true,
+        ),
+        '/list': (_) => const ComplaintListPage(),
       },
     );
   }
 }
 
-/// ---------- Citizen Home ----------
+class _SplashGate extends StatelessWidget {
+  const _SplashGate();
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: Check SessionManager to determine which page to show
+    // For now, return login page as default
+    return const LoginPage();
+  }
+}
+
+/// Citizen Home Page - shows citizen dashboard
 class CitizenHomePage extends StatelessWidget {
   const CitizenHomePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('CivicTrack • Citizen'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async { await Session.logout(); if (context.mounted) Navigator.pushReplacementNamed(context, '/login'); },
-          )
-        ],
+        title: const Text('Citizen Dashboard'),
+        elevation: 0,
       ),
-      body: Center(
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          const Icon(Icons.location_city, size: 96),
-          const SizedBox(height: 16),
-          const Text('Welcome, Citizen', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          FilledButton.icon(
-            onPressed: () => Navigator.pushNamed(context, '/submit'),
-            icon: const Icon(Icons.report),
-            label: const Text('Submit a Complaint'),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Welcome, Citizen!',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 24),
+              
+              // Quick Action Cards
+              GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _buildActionCard(
+                    context,
+                    title: 'Submit Complaint',
+                    icon: Icons.add_circle,
+                    color: Colors.blue,
+                    onTap: () => Navigator.pushNamed(context, '/submit'),
+                  ),
+                  _buildActionCard(
+                    context,
+                    title: 'My Complaints',
+                    icon: Icons.list,
+                    color: Colors.green,
+                    onTap: () => Navigator.pushNamed(context, '/citizen/list'),
+                  ),
+                ],
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () => Navigator.pushNamed(context, '/list'),
-            icon: const Icon(Icons.list),
-            label: const Text('View My Complaints'),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionCard(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [color.withOpacity(0.7), color],
+            ),
           ),
-        ]),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 48, color: Colors.white),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-/// ---------- Staff Home ----------
+/// Staff Home Page - shows staff dashboard
 class StaffHomePage extends StatelessWidget {
   const StaffHomePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('CivicTrack • Staff'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async { await Session.logout(); if (context.mounted) Navigator.pushReplacementNamed(context, '/login'); },
-          )
-        ],
+        title: const Text('Staff Dashboard'),
+        elevation: 0,
       ),
-      body: Center(
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          const Icon(Icons.engineering, size: 96),
-          const SizedBox(height: 16),
-          const Text('Welcome, Municipal Staff', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          FilledButton.icon(
-            onPressed: () => Navigator.pushNamed(context, '/list'), // show assigned list later
-            icon: const Icon(Icons.assignment),
-            label: const Text('View Assigned Complaints'),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Welcome, Staff!',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 24),
+              
+              // Staff Action Cards
+              GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _buildActionCard(
+                    context,
+                    title: 'Assigned Complaints',
+                    icon: Icons.assignment,
+                    color: Colors.orange,
+                    onTap: () => Navigator.pushNamed(context, '/staff/assigned'),
+                  ),
+                  _buildActionCard(
+                    context,
+                    title: 'All Complaints',
+                    icon: Icons.list,
+                    color: Colors.purple,
+                    onTap: () => Navigator.pushNamed(context, '/list'),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ]),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionCard(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [color.withOpacity(0.7), color],
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 48, color: Colors.white),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

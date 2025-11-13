@@ -55,7 +55,7 @@ class CitizenHomePage extends StatelessWidget {
 
             // 🔹 Button to view submitted complaints
             OutlinedButton.icon(
-              onPressed: () => Navigator.pushNamed(context, '/list'),
+              onPressed: () => Navigator.pushNamed(context, '/citizen/list'),
               icon: const Icon(Icons.list),
               label: const Text('View Complaints'),
               style: OutlinedButton.styleFrom(
